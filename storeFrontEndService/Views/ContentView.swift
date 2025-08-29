@@ -3,6 +3,9 @@ import SwiftUI
 // New component for horizontal scrolling section with placeholder items
 
 struct StoreInfoTemplateView: View {
+    
+    @EnvironmentObject var dataStore : DataStore
+    
     var body: some View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 16) {
@@ -21,13 +24,15 @@ struct StoreInfoTemplateView: View {
 
                 // Section 2: Horizontal scrolling placeholder component
                 Text("Nearby Stores")
-
-                
-                HorizontalPlaceholderSection()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                HorizontalPlaceholderSection(stores : $dataStore.nearbyStores)
 
                 // Section 3: Another horizontal scrolling placeholder component
                 Text("Top Rated Stores")
-                HorizontalPlaceholderSection()
+                    .frame(maxWidth : .infinity, alignment : .leading)
+                
+                HorizontalPlaceholderSection(stores : $dataStore.topRatedStores)
                 
                 Spacer()
                 
@@ -55,8 +60,10 @@ struct StoreInfoTemplateView: View {
     }
 }
 
-struct StoreInfoTemplateView_Previews: PreviewProvider {
-    static var previews: some View {
-        StoreInfoTemplateView()
-    }
-}
+/*
+ struct StoreInfoTemplateView_Previews: PreviewProvider {
+ static var previews: some View {
+ StoreInfoTemplateView()
+ }
+ }
+ */

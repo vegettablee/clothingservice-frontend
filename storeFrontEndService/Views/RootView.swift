@@ -8,11 +8,20 @@
 import SwiftUI
 
 struct RootView: View {
+    @EnvironmentObject var dataStore : DataStore
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        if(dataStore.storeIsLoading == true) {
+            LoadingView()
+        }
+        else {
+            StoreInfoTemplateView().onAppear() {
+                Task {
+                    try await dataStore.performPhotoNetworkCalls()
+                }
+            }
+        }
     }
 }
 
-#Preview {
-    RootView()
-}
+

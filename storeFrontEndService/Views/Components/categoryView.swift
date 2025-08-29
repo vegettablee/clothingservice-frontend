@@ -45,7 +45,7 @@ struct CategoryButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.headline)
+                .font(.body)
                 .fontWeight(.medium)
                 .foregroundColor(.white)
                 .padding(.horizontal, 15)

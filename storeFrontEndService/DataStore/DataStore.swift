@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 @Observable
 class DataStore : ObservableObject {
     // all extra sorting will be done after these values are computed, and this function is responsible for returning them
@@ -19,12 +20,17 @@ class DataStore : ObservableObject {
     var nearbyStores : [Place] = []
     var topRatedStores : [Place] = []
     
-    private var loading = false
+    var storeIsLoading = true
+    var photosAreLoading = true
     
     static let shared = DataStore()
     
     private init() {
-        print("Datastore initialized")
+        print("DataStore initialized")
+        Task {
+            await bootStrap()
+            print("DataStore filled")
+        }
     }
     // both nearbyStores and topRatedStores are directly from the backend
     
@@ -36,7 +42,7 @@ class DataStore : ObservableObject {
                 try await performNetworkCalls()
             }
             catch {
-                print("Error performing initial network calls")
+                print("Error performing initial network calls", error)
             }
         }
         // endpoints in a separate file
@@ -46,13 +52,55 @@ class DataStore : ObservableObject {
     }
     
     func performNetworkCalls() async throws {
-        return try await withTaskGroup(of: Void.self) { group in
-            group.addTask {
-                
+        async let nearby = await NetworkManager.shared.fetchNearbyStores()
+        async let top = await NetworkManager.shared.fetchTopRatedStores()
+        
+        let (n, t) = await (nearby, top)
+        self.nearbyStores = n
+        self.topRatedStores = t
+        self.storeIsLoading = false
+    }
+    
+    func updateStorePhotoUris (type : String, index : Int, photoUris : [String] ) async {
+        if(type == "NEARBY") {
+            self.nearbyStores[index].photoURIs = photoUris
+        }
+        else if(type == "TOPRATED") {
+            self.topRatedStores[index].photoURIs = photoUris
+        }
+    }
+    
+    func performPhotoNetworkCalls() async throws {
+        
+        try await withThrowingTaskGroup(of: [String].self) { group in
+            for index in 0..<self.nearbyStores.count {
+                group.addTask {
+                    if let photos = await self.nearbyStores[index].photos {
+                        // pass in the index
+                        let photoUris = await NetworkManager.shared.getStorePhotos(storePhotoKey: photos[0].s3Key ?? "")
+                        await self.updateStorePhotoUris(type: "NEARBY", index: index, photoUris: photoUris)
+                       //  self.nearbyStores[index].photoURIs = photoUris
+                        return photoUris
+                    }
+                    else {
+                        return [""]
+                    }
+                }
+            }
+            for index in 0..<self.topRatedStores.count {
+                group.addTask {
+                    if let photos = await self.topRatedStores[index].photos {
+                        let photoUris = await NetworkManager.shared.getStorePhotos(storePhotoKey: photos[0].s3Key ?? "")
+                        await self.updateStorePhotoUris(type: "TOPRATED", index: index, photoUris: photoUris)
+                        return photoUris
+                    }
+                    else {
+                        return [""]
+                    }
+                }
             }
             
         }
-        
     }
     
     func sort(Filters : [String]) -> [Place] {

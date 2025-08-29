@@ -10,14 +10,11 @@ import SwiftUI
 
 @main
 struct storeFrontEndServiceApp: App {
+        @StateObject private var dataStore = DataStore.shared
         var body: some Scene {
-            
-        WindowGroup {
-            // network call to fetch all of the needed data, put this into some constant
-            
-            HomeView()
-                .environment(DataStore.shared)
-                 
-        }
+            WindowGroup {
+                    RootView()
+                        .environmentObject(dataStore)
+            }
     }
 }
