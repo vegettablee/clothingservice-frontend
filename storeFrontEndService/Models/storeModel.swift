@@ -83,7 +83,7 @@ struct Place: Decodable {
     let reviews: [Review]?
     let photos: [Photo]?
     let generativeSummary: GenerativeSummary?
-    let primary: [String]
+    let primary: [String]?
     let funding: [String]
     let inventory: [String]
     let summary: String

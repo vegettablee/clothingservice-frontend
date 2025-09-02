@@ -1,7 +1,7 @@
 import Foundation
 
-let lat = 33.066262; // lat, lon, rad, are all dummy data for now, client should have them
-let lon = -96.73098;
+// let lat = 33.066262; // lat, lon, rad, are all dummy data for now, client should have them
+// let lon = -96.73098;
 let rad = 8000;
 // let URL = "http://localhost:3000/stores/nearby"
 
@@ -24,7 +24,7 @@ class NetworkManager {
         print("Network manager initialized")
     }
     
-    func fetchNearbyStores() async -> [Place] { // add longitude, latitude, and radius later as parameters
+    func fetchNearbyStores(lat : Double, lon : Double) async -> [Place] { // add longitude, latitude, and radius later as parameters
         
         print("Created request for nearbyStores endopint...")
         var urlComponents = URLComponents()
@@ -52,7 +52,7 @@ class NetworkManager {
         
     }
     
-    func fetchTopRatedStores() async -> [Place] { // add longitude, latitude, and radius later as parameters
+    func fetchTopRatedStores(lat : Double, lon : Double) async -> [Place] { // add longitude, latitude, and radius later as parameters
         
         print("Creating request for topRatedStores endpoint...")
         var urlComponents = URLComponents()
@@ -81,28 +81,25 @@ class NetworkManager {
     
     
     
-    func sendNetworkRequest(url : URLRequest) async -> [Place] {
-        // this function sends a network request based on the url, but this should only be used if needing stores
-        // it returns an array of stores in the form of [Place], used for nearbyStores and topRatedStores
+    func sendNetworkRequest(url: URLRequest) async -> [Place] {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 30
+        configuration.timeoutIntervalForResource = 60
+
+        let session = URLSession(configuration: configuration)
+
         do {
-            let (data, response) = try await URLSession.shared.data(for: url)
+            let (data, response) = try await session.data(for: url)
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                print(response)
-                print("No data returned from server network request")
+                print("Unexpected response:", response)
                 return []
             }
             let decoder = JSONDecoder()
-            let stores = try decoder.decode([Place].self, from : data)
-            
-            let responseString = String(data: data, encoding: .utf8)
-           //  print(responseString)
-            print("This is the name of the first store : " + stores[0].displayName.text)
-            return stores
+            return try decoder.decode([Place].self, from: data)
+        } catch {
+            print("Error during network request:", error)
+            return []
         }
-        catch {
-            print("Error occurred during network request for url \(url.url)", error)
-        }
-        return []
     }
     
     func getStorePhotos(storePhotoKey : String) async -> [String] { // this works
@@ -127,7 +124,7 @@ class NetworkManager {
                 
                 let decoder = JSONDecoder()
                 let photoUris = try decoder.decode(photoURIs.self, from : data)
-                print(photoUris)
+                print("Received photoURIs for : " + storePhotoKey)
                 
                 return photoUris
                 

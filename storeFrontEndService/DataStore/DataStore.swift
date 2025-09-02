@@ -23,13 +23,22 @@ class DataStore : ObservableObject {
     var storeIsLoading = true
     var photosAreLoading = true
     
+    var latitude : Double?
+    var longitude : Double?
+    
     static let shared = DataStore()
     
     private init() {
-        print("DataStore initialized")
+        print("DataStore initialized without bootstrap...")
+    }
+    
+    func start (lat : Double, lon : Double)  {
+        self.latitude = lat
+        self.longitude = lon
+     // this only runs once the user's location has been enabled, and the coordinates exist
         Task {
             await bootStrap()
-            print("DataStore filled")
+            print("Datastore filled")
         }
     }
     // both nearbyStores and topRatedStores are directly from the backend
@@ -52,8 +61,8 @@ class DataStore : ObservableObject {
     }
     
     func performNetworkCalls() async throws {
-        async let nearby = await NetworkManager.shared.fetchNearbyStores()
-        async let top = await NetworkManager.shared.fetchTopRatedStores()
+        async let nearby = await NetworkManager.shared.fetchNearbyStores(lat : self.latitude!, lon : self.longitude!)
+        async let top = await NetworkManager.shared.fetchTopRatedStores(lat : self.latitude!, lon : self.longitude!)
         
         let (n, t) = await (nearby, top)
         self.nearbyStores = n

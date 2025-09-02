@@ -11,10 +11,10 @@ struct StoreInfoTemplateView: View {
             VStack(spacing: 16) {
                 // Section 1: Placeholder for store information header
                 Text("Pick one or more categories...")
-                    .font(.headline)
+                    .font(.title)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color(.systemGray5))
+                    .background(Color(.clear))
                     .cornerRadius(8)
                 
                 // add category section

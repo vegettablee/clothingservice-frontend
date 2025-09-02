@@ -2,90 +2,90 @@ import Foundation
 import SwiftUI
 
 struct HorizontalPlaceholderSection: View {
+    static let storePageSize: Int = 10
+    @Binding var stores: [Place]
     
-    static let storePageSize : Int = 10 // number of stores loaded before needing a refresh
-    @Binding var stores : [Place]
+    @State private var selectedIndex: Int? = nil
+    
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 16) {
-                ForEach(0..<stores.count) { index in
-                    storeItem(store: $stores[index]).onTapGesture {
-                        
-                    }
-                      //  .background(Color.gray)
+                ForEach(stores.indices, id: \.self) { index in
+                    storeItem(store: $stores[index])
+                        .onTapGesture {
+                            selectedIndex = index
+                        }
                 }
             }
-            //.padding(.horizontal)
         }
         .frame(maxWidth: .infinity, maxHeight: 215)
-        .clipped(antialiased: false) // Disables scroll clipping for seamless appearance
-  //      .background(Color(.systemGray6))
+        .clipped(antialiased: false)
         .cornerRadius(4)
         .padding(.vertical, 5)
+        .fullScreenCover(
+            isPresented: Binding(
+                get: { selectedIndex != nil },
+                set: { if !$0 { selectedIndex = nil } }
+            )
+        ) {
+            if let index = selectedIndex {
+                StoreMetadataView(place: $stores[index])
+                    .interactiveDismissDisabled(false)
+                    .scrollDismissesKeyboard(.interactively)// ✅ binding still works
+            }
+        }
     }
 }
 
+
+
 struct storeItem : View {
-    
     // Font constants for easy customization
     private static let primaryFont = "SF Pro Display"
-    private static let storeName: Font = .custom(primaryFont, size: 14).weight(.medium) // Reduced from 16
-    private static let categoryText: Font = .custom(primaryFont, size: 10) // New category font
+    private static let storeName: Font = .custom(primaryFont, size: 14).weight(.medium)
+    private static let categoryText: Font = .custom(primaryFont, size: 10)
     private static let ratingText: Font = .custom(primaryFont, size: 12).weight(.medium)
     private static let userCount: Font = .custom(primaryFont, size: 11)
     private static let inventoryText: Font = .custom(primaryFont, size: 11)
-   // @State var store : Place
-    
+
     @Binding var store : Place
-    
+
     var body : some View {
         VStack(spacing: 0) {
-            // Image section (60% of the view)
-            URLImageView(store.photoURIs?[0] ?? "")
-               // .fill(Color.blue.opacity(0.3))
-                .frame(width: 140, height: 129) // 60% of total height (215 * 0.6)
+            // ⭐️ Safe: use .first instead of [0]
+            URLImageView(store.photoURIs?.first ?? "")
+                .frame(width: 140, height: 129)
                 .clipped()
-                .cornerRadius(8, corners: [.topLeft, .topRight]) // Apply corner radius only to top corners
-            /*
-                .overlay(
-                    Image(systemName: "photo")
-                        .font(.system(size: 24))
-                        .foregroundColor(.gray)
-                )
-             */
-            
+                .cornerRadius(8, corners: [.topLeft, .topRight])
+
             // Metadata section (40% of the view)
-            VStack(alignment: .leading, spacing: 3) { // Reduced spacing from 4 to 3
-                // 1st line: Store name (smaller font)
+            VStack(alignment: .leading, spacing: 3) {
                 Text(store.displayName.text)
                     .font(Self.storeName)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
-                // 2nd line: Category field
-                Text("Category: ")
+
+                Text("Category: " + (store.primary?.first ?? "Not available"))
                     .font(Self.categoryText)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
-                // 3rd line: Rating, stars, and user count
+
                 HStack(spacing: 4) {
                     Text(String(format: "%.1f", store.rating ?? 0))
                         .font(Self.ratingText)
                         .foregroundColor(.primary)
-                    
+
                     StarRatingView(rating: store.rating ?? 0)
                         .frame(height: 12)
-                    
+
                     Text("(\(store.userRatingCount ?? 0))")
                         .font(Self.userCount)
                         .foregroundColor(.secondary)
-                    
+
                     Spacer()
                 }
-                
-                // 4th line: Inventory
+
                 Text("Sells: " + store.inventory.joined(separator: ", "))
                     .font(Self.inventoryText)
                     .foregroundColor(.secondary)
@@ -94,15 +94,14 @@ struct storeItem : View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
-            .frame(width: 140, height: 86) // 40% of total height
+            .frame(width: 140, height: 86)
         }
         .frame(width: 140, height: 215)
         .background(Color.clear)
         .cornerRadius(8)
-      //  .shadow(color : Color.black, radius: 15)
-        
     }
 }
+
 
 // Extension to apply corner radius to specific corners
 extension View {
